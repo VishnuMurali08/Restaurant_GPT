@@ -1,0 +1,33 @@
+# Core App
+streamlit>=1.30.0
+openai>=1.10.0
+# langchain>=0.1.13
+langchain-community>=0.0.19
+langchain-openai>=0.0.5
+
+# Database
+psycopg2-binary>=2.9.9
+python-dotenv>=1.0.1
+sqlalchemy>=2.0.29
+
+# Forecasting 
+prophet>=1.1.2
+
+# Data Manipulation
+pandas>=2.2.1
+numpy>=1.26.4
+
+# Plotting 
+matplotlib>=3.8.3
+plotly>=5.20.0
+
+# Logging and utilities
+tqdm>=4.66.2
+
+# Vector store 
+faiss-cpu>=1.7.4
+
+# Web scraping
+google-search-results>=2.4.2   # <-- for SerpAPI
+
+
