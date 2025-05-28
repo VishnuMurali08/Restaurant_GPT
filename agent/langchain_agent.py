@@ -1,7 +1,6 @@
 # agent/langchain_agent.py
 
 from langchain.agents import initialize_agent, AgentType
-# from langchain.chat_models import ChatOpenAI
 from langchain_openai import ChatOpenAI
 from langchain.tools import Tool
 from langchain.memory import ConversationBufferMemory

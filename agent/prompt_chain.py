@@ -1,6 +1,5 @@
 # agent/prompt_chain.py
 from langchain.prompts import PromptTemplate
-# from langchain.chains import LLMChain
 from langchain_openai import ChatOpenAI  
 
 prompt_template = PromptTemplate(
