@@ -4,11 +4,11 @@ from dotenv import load_dotenv
 from data.db import fetch_table
 from openai import OpenAI
 
-# Load environment and set API key
+# Load environment and API key
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# 🔍 Analyze overall sentiment of a review
+# 🔍 Classify sentiment of a review
 def analyze_sentiment(text):
     prompt = f"Classify the following review as Positive, Negative, or Neutral:\nReview: \"{text}\"\nSentiment:"
     response = client.chat.completions.create(
@@ -19,9 +19,13 @@ def analyze_sentiment(text):
     )
     return response.choices[0].message.content.strip()
 
-# 🧭 Extract main complaint theme
+# 🧭 Extract complaint theme from a review
 def extract_complaint_theme(text):
-    prompt = f"Extract the main complaint theme from the following review. Choose from: 'Service', 'Food Quality', 'Waiting Time', 'Price', or 'None'.\nReview: \"{text}\"\nTheme:"
+    prompt = (
+        "Extract the main complaint theme from the following review. "
+        "Choose from: 'Service', 'Food Quality', 'Waiting Time', 'Price', or 'None'.\n"
+        f"Review: \"{text}\"\nTheme:"
+    )
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}],
@@ -30,7 +34,7 @@ def extract_complaint_theme(text):
     )
     return response.choices[0].message.content.strip()
 
-# 🔁 Analyze all reviews (or optionally filter by source)
+# 🔁 Annotate all reviews with sentiment and complaint theme
 def process_reviews(source=None):
     df = fetch_table("reviews")
     if source:
@@ -40,12 +44,12 @@ def process_reviews(source=None):
     df["complaint_theme"] = df["review_text"].apply(extract_complaint_theme)
     return df
 
-# 📊 Summarize sentiment trends across all reviews or for a specific source
+# 📊 Summarize overall sentiment and complaint themes
 def summarize_sentiment_trends(_=None):
-    df = process_reviews()  # Load all reviews
+    df = process_reviews()
     output = ""
 
-    # === Overall Summary ===
+    # Overall counts
     overall_sentiment = df["sentiment"].value_counts().to_dict()
     overall_complaints = df["complaint_theme"].value_counts().to_dict()
 
@@ -60,10 +64,8 @@ def summarize_sentiment_trends(_=None):
 
     output += "\n" + ("=" * 50) + "\n"
 
-    # === Grouped by Source ===
-    sources = df["source"].unique()
-
-    for source in sources:
+    # By source
+    for source in df["source"].unique():
         source_df = df[df["source"] == source]
         sentiment_summary = source_df["sentiment"].value_counts().to_dict()
         complaint_summary = source_df["complaint_theme"].value_counts().to_dict()
@@ -79,3 +81,51 @@ def summarize_sentiment_trends(_=None):
         output += "\n" + ("-" * 50) + "\n"
 
     return output.strip()
+
+# 🧵 Summarize all reviews for a specific complaint theme
+def summarize_specific_complaints(theme="Service"):
+    df = process_reviews()
+    theme = theme.strip().title()
+
+    # Handle 'None' explicitly
+    if theme.lower() == "none":
+        return "👍 No major complaints were flagged in these reviews. Customers seem generally satisfied!"
+
+    # Filter reviews matching the theme
+    filtered_df = df[df["complaint_theme"].str.lower() == theme.lower()]
+
+    if filtered_df.empty:
+        return f"✅ No complaints related to **{theme}** were found in the current review set."
+
+    # Combine relevant reviews
+    review_texts = "\n".join(
+        f"- {row['review_date']}: {row['review_text']} ({row['source']})"
+        for _, row in filtered_df.iterrows()
+    )
+
+    # Prompt GPT to summarize the actual complaints
+    prompt = f"""
+You're a helpful assistant analyzing restaurant reviews. A user asked about customer complaints related to **{theme}**.
+
+Here are real reviews tagged under that theme:
+
+{review_texts}
+
+Please:
+- Summarize the common issues mentioned
+- Use a friendly, clear, and helpful tone
+- Group similar complaints
+- Rephrase issues naturally, avoid quoting unless useful
+- Format your response with bullet points or short paragraphs
+
+Summary:
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.5,
+        max_tokens=500
+    )
+
+    return response.choices[0].message.content.strip()

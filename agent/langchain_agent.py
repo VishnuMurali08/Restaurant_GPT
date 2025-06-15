@@ -1,7 +1,6 @@
 # agent/langchain_agent.py
 
 from langchain.agents import initialize_agent, AgentType
-# from langchain.chat_models import ChatOpenAI
 from langchain_openai import ChatOpenAI
 from langchain.tools import Tool
 from langchain.memory import ConversationBufferMemory
@@ -22,9 +21,14 @@ TOOLS = [
         description="Suggest items to reorder based on stock and forecasted demand."
     ),
     Tool(
-        name="DishProfitabilityChecker",
-        func=low_margin_dishes,
-        description="List dishes with low profit margins based on ingredient costs."
+    name="DishProfitabilityChecker",
+    func=low_margin_dishes,
+    description="""
+        List dishes with low profit margins based on ingredient costs.
+        This tool analyzes ingredient costs and selling prices to find items with margin below 30%.
+        You can also specify another threshold like 'below 25% margin'.
+        Example queries: 'Which dishes are not profitable?', 'Show dishes below 40% margin'.
+    """ 
     ),
     Tool(
         name="StaffShiftForecaster",
@@ -34,7 +38,7 @@ TOOLS = [
     Tool(
         name="ReviewSentimentAnalyzer",
         func=summarize_sentiment_trends,
-        description="Analyze review sentiments and complaint themes."
+        description="Summarize real customer complaints for any theme: 'Service', 'Food Quality', 'Waiting Time', 'Price', or 'None'."
     ),
     Tool(
         name="PriceOptimizer",
